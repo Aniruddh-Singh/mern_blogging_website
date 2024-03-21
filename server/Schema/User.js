@@ -33,7 +33,7 @@ const userSchema = mongoose.Schema({
             type: String,
             default: () => {
                 return `https://api.dicebear.com/6.x/${profile_imgs_collections_list[Math.floor(Math.random() * profile_imgs_collections_list.length)]}/svg?seed=${profile_imgs_name_list[Math.floor(Math.random() * profile_imgs_name_list.length)]}`
-            } 
+            }
         },
     },
     social_links: {
@@ -62,7 +62,7 @@ const userSchema = mongoose.Schema({
             default: "",
         }
     },
-    account_info:{
+    account_info: {
         total_posts: {
             type: Number,
             default: 0
@@ -77,17 +77,17 @@ const userSchema = mongoose.Schema({
         default: false
     },
     blogs: {
-        type: [ Schema.Types.ObjectId ],
+        type: [Schema.Types.ObjectId],
         ref: 'blogs',
         default: [],
     }
 
-}, 
-{ 
-    timestamps: {
-        createdAt: 'joinedAt'
-    } 
+},
+    {
+        timestamps: {
+            createdAt: 'joinedAt'
+        }
 
-})
+    })
 
 export default mongoose.model("users", userSchema);
