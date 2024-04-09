@@ -5,6 +5,7 @@ import { EditorContext } from "../pages/editor.pages"
 import axios from "axios"
 import { UserContext } from "../App"
 import { useNavigate, useParams } from "react-router-dom"
+import Tag from "./tags.component"
 
 const PublishForm = () => {
 

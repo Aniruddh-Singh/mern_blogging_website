@@ -1,6 +1,19 @@
-POST http://localhost:3000/get-profile
+
+# eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YzkxZjM2OTc2YTNkOWQ4ZjM4ZjQ3MyIsImlhdCI6MTcxMjU5Nzk1N30.SL_8eSGNiJXz25p7rXLH43qxjPcmhG_Ctw0VekR4-64
+
+# POST http://localhost:3000/change-password
+# Content-Type: application/json
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YzkxZjM2OTc2YTNkOWQ4ZjM4ZjQ3MyIsImlhdCI6MTcxMjU5Nzk1N30.SL_8eSGNiJXz25p7rXLH43qxjPcmhG_Ctw0VekR4-64
+
+# {
+#     "currentPassword": "Aniruddh1@123",
+#     "newPassword": "Aniruddh@123"
+# }
+
+POST http://localhost:3000/signin
 Content-Type: application/json
 
 {
-    "username": "kunal"
+    "email": "aniruddh@gmail.com",
+    "password": "Aniruddh@123"
 }

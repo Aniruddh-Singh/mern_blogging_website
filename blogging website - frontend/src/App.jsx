@@ -3,14 +3,16 @@ import Navbar from "./components/navbar.component.jsx";
 import UserAuthForm from "./pages/userAuthForm.page.jsx";
 import { createContext, useEffect, useState } from "react";
 import { lookInSession } from "./common/session.jsx";
-import BlogEditor from "./components/blog-editor.component.jsx";
 import Editor from "./pages/editor.pages.jsx";
-import PublishForm from "./components/publish-form.component.jsx";
 import HomePage from "./pages/home.page.jsx";
 import SearchPage from "./pages/search.page.jsx";
 import PageNotFound from "./pages/404.page.jsx";
 import ProfilePage from "./pages/profile.page.jsx";
 import BlogPage from "./pages/blog.page.jsx";
+import SideNav from "./components/sidenavbar.component.jsx";
+import ChangePassword from "./pages/change-password.page.jsx";
+import EditProfile from "./pages/edit-profile.page.jsx";
+import Notification from "../../server/Schema/Notification.js";
 
 export const UserContext = createContext({});
 
@@ -42,6 +44,14 @@ const App = () => {
                 {userAuth ? < Route path="/editor/:blog_id" element={<Editor />} /> : ""}
                 <Route path="/" element={<Navbar />} >
                     <Route index element={<HomePage />} />
+                    <Route path="dashboard" element={<SideNav />}>
+                        <Route path="notifications" element={<Notification />} />
+                    </Route>
+                    <Route path="settings" element={<SideNav />}>
+                        <Route path="edit-profile" element={<EditProfile />} />
+                        <Route path="change-password" element={<ChangePassword />} />
+                    </Route>
+
                     <Route path="signin" element={<UserAuthForm type="sign-in" />} />
                     <Route path="signup" element={<UserAuthForm type="sign-up" />} />
                     <Route path="search/:query" element={<SearchPage />} />

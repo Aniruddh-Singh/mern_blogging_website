@@ -15,6 +15,8 @@ const BlogEditor = () => {
 
     let { blog, blog: { title, banner, content, tags, des } = { title: '', banner: '', content: [], tags: [], des: '', author: { personal_info: {} } }, setBlog, textEditor, setTextEditor, setEditorState } = useContext(EditorContext);
 
+    // console.log(isReady, "aniruddh");
+
     let { userAuth: { accessToken } } = useContext(UserContext);
 
     let { blog_id } = useParams();
