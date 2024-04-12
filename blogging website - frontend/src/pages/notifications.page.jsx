@@ -10,7 +10,7 @@ import LoadMoreDataBtn from '../components/load-more.component';
 
 const Notification = () => {
 
-    const { userAuth: { accessToken } } = useContext(UserContext);
+    const { userAuth, userAuth: { accessToken }, new_notification_available, setUserAuth } = useContext(UserContext);
 
     const [filter, setFilter] = useState("all");
     const [notifications, setNotifications] = useState(null);
@@ -25,6 +25,11 @@ const Notification = () => {
             }
         })
             .then(async ({ data: { notifications: data } }) => {
+
+                if (new_notification_available) {
+                    setUserAuth({ ...userAuth, new_notification_available: false })
+                }
+
                 let formatedData = await filterPaginationData({
                     state: notifications,
                     data,
@@ -45,9 +50,7 @@ const Notification = () => {
 
     const handleFilter = (e) => {
         let btn = e.target;
-
         setFilter(btn.innerHTML);
-
         setNotifications(null);
     }
 
@@ -76,12 +79,12 @@ const Notification = () => {
                             notifications.results.length ?
                                 notifications.results.map((notification, i) => {
                                     return <AnimationWrapper key={i} transition={{ delay: i * 0.08 }} >
-                                        <NotificationCard />
+                                        <NotificationCard data={notification} index={i} notificationState={{ notifications, setNotifications }} />
                                     </AnimationWrapper>
                                 }) : <NoDataMessage message="Nothing Available" />
                         }
 
-                        <LoadMoreDataBtn state={notifications} fetchDataFun={fetchNotifications} />
+                        <LoadMoreDataBtn state={notifications} fetchDataFun={fetchNotifications} additionalParam={{ deletedDocCount: notifications.deletedDocCount }} />
                     </>
             }
         </div>

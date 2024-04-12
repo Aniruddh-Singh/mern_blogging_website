@@ -31,7 +31,6 @@ const SideNav = () => {
     useEffect(() => {
         setShowSideNav(false);
         pageStateTab.current.click();
-        console.log(pageStateTab.current.click())
 
 
     }, [pageState])

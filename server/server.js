@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import "dotenv/config"
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
-import jwt, { verify } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import cors from "cors";
 import aws from "aws-sdk";
 
@@ -531,7 +531,7 @@ server.post("/add-comment", verifyJWT, (req, res) => {
 
     let user_id = req.user;
 
-    let { _id, comment, replying_to, blog_author } = req.body;
+    let { _id, comment, replying_to, blog_author, notification_id } = req.body;
 
     if (!comment.length) {
         return res.status(403).json({ error: "Write something to leave a comment" })
@@ -569,6 +569,11 @@ server.post("/add-comment", verifyJWT, (req, res) => {
 
             await Comment.findOneAndUpdate({ _id: replying_to }, { $push: { children: commentFile._id } })
                 .then(replyToCommentDoc => { notificationObj.notification_for = replyToCommentDoc.commented_by })
+
+            if (notification_id) {
+                Notification.findOneAndUpdate({ _id: notification_id }, { reply: commentFile._id })
+                    .then(notification => console.log('notificaiton updated'))
+            }
         }
 
         new Notification(notificationObj).save()
@@ -646,7 +651,7 @@ const deleteComments = (_id) => {
                 Notification.findOneAndDelete({ comment: _id })
                     .then(notification => console.log('comment notification deleted'))
 
-                Notification.findOneAndDelete({ reply: _id })
+                Notification.findOneAndUpdate({ reply: _id }, { $unset: { reply: 1 } })
                     .then(notification => console.log('reply notification deleted'));
 
                 Blog.findOneAndUpdate({ _id: comment.blog_id }, { $pull: { comments: _id }, $inc: { "activity.total_comments": -1, "activity.total_parent_comments": comment.parent ? 0 : -1 } })
@@ -728,6 +733,14 @@ server.post("/notifications", verifyJWT, (req, res) => {
         .sort({ createdAt: -1 })
         .select("createdAt type seen reply")
         .then(notifications => {
+
+            Notification.updateMany(findQuery, { seen: true })
+                .skip(skipDocs)
+                .limit(maxLimit)
+                .then(() => {
+                    console.log('notification seen')
+                })
+
             return res.status(200).json({ notifications });
         })
         .catch(err => {
@@ -752,6 +765,46 @@ server.post("/all-notifications-count", verifyJWT, (req, res) => {
             return res.status(200).json({ totalDocs: count });
         })
         .catch(err => {
+            return res.status(500).json({ error: err.message });
+        })
+})
+
+server.post("/user-written-blogs", verifyJWT, (req, res) => {
+    let user_id = req.user;
+
+    let { page, draft, query, deletedDocCount } = req.body;
+
+    let maxLimit = 5;
+    let skipDocs = (page - 1) * maxLimit;
+
+    if (deletedDocCount) {
+        skipDocs -= deletedDocCount;
+    }
+
+    Blog.find({ author: user_id, draft, title: new RegExp(query, 'i') })
+        .skip(skipDocs)
+        .limit(maxLimit)
+        .sort({ publishedAt: -1 })
+        .select("title banner publishedAt blog_id activity des draft -_id")
+        .then(blogs => {
+            return res.status(200).json({ blogs })
+        })
+        .catch(err => {
+            return res.status(500).json({ error: err.message })
+        })
+})
+
+server.post("user-written-blogs-count", verifyJWT, (req, res) => {
+    let user_id = req.user;
+
+    let { draft, query } = req.body;
+
+    Blog.countDocuments({ author: user_id, draft, title: new RegExp(query, 'i') })
+        .then(count => {
+            return res.status(200).json({ totalDocs: count });
+        })
+        .catch(err => {
+            console.log(err.message);
             return res.status(500).json({ error: err.message });
         })
 })
