@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Link } from 'react-router-dom';
 import { getDay } from '../common/date';
+import { UserContext } from '../App';
 
 const BlogStats = ({ stats }) => {
 
@@ -23,6 +24,8 @@ export const ManagePublishedBlogCard = ({ blog }) => {
 
     let { banner, blog_id, title, publishedAt, activity } = blog;
 
+    let { userAuth: { accessToken } } = useContext(UserContext);
+
     const [showStat, setShowStat] = useState(false);
 
     return (
@@ -42,7 +45,7 @@ export const ManagePublishedBlogCard = ({ blog }) => {
 
                         <button className='lg:hidden pr-4 py-2 underline' onClick={() => setShowStat(preVal => !preVal)}>Stats</button>
 
-                        <button className='pr-4 py-2 underline text-red'>Delete</button>
+                        <button className='pr-4 py-2 underline text-red' onClick={(e) => deleteBlog(blog, accessToken, e.target)}>Delete</button><button className='pr-4 py-2 underline text-red'>Delete</button>
                     </div>
                 </div>
 
@@ -60,9 +63,13 @@ export const ManagePublishedBlogCard = ({ blog }) => {
     )
 }
 
-export const ManageDraftBlogPost = ({ blog, index }) => {
+export const ManageDraftBlogPost = ({ blog }) => {
 
-    let { title, des, blog_id } = blog;
+    let { title, des, blog_id, index } = blog;
+
+    index++;
+
+    let { userAuth: { accessToken } } = useContext(UserContext);
 
     return (
         <div className='flex gap-5 lg:gap-10 pb-6 border-b mb-6 border-grey'>
@@ -76,11 +83,47 @@ export const ManageDraftBlogPost = ({ blog, index }) => {
                 <div className='flex gap-6 mt-3'>
                     <Link to={`/editor/${blog_id}`} className='pr-4 py-2 underline'>Edit</Link>
 
-                    <button className='pr-4 py-2 underline text-red'>Delete</button>
+                    <button className='pr-4 py-2 underline text-red' onClick={(e) => deleteBlog(blog, accessToken, e.target)}>Delete</button>
                 </div>
             </div>
 
         </div>
     )
 
+}
+
+const deleteBlog = (blog, accessToken, target) => {
+
+    let { index, blog_id, setStateFunc } = blog;
+
+    target.setAttribute("disabled", true);
+
+    axios.post(import.meta.env.VITE_SERVER_ROUTE + "/delete-blog", { blog_id }, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    })
+        .then(({ data }) => {
+            target.removeAttribute("disabled");
+
+            setStateFunc(preVal => {
+
+                let { deletedDocCount, totalDocs, results } = preVal;
+
+                results.splice(index, 1);
+
+                if (!deletedDocCount) {
+                    deletedDocCount = 0;
+                }
+
+                if (!results.length && totalDocs - 1 > 0) {
+                    return null;
+                }
+
+                return { ...preVal, totalDocs: totalDocs - 1, deletedDocCount: deletedDocCount + 1 }
+            })
+        })
+        .catch(err => {
+            console.log(err)
+        })
 }

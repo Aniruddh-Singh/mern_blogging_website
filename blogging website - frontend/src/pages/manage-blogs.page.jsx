@@ -8,6 +8,8 @@ import Loader from '../components/loader.component';
 import NoDataMessage from '../components/nodata.component';
 import AnimationWrapper from '../common/page-animation';
 import { ManageDraftBlogPost, ManagePublishedBlogCard } from '../components/manage-blogcard.component';
+import LoadMoreDataBtn from '../components/load-more.component';
+import { useSearchParams } from 'react-router-dom';
 
 const ManageBlogs = () => {
 
@@ -16,6 +18,8 @@ const ManageBlogs = () => {
     const [blogs, setBlogs] = useState(null);
     const [drafts, setDrafts] = useState(null);
     const [query, setQuery] = useState("");
+
+    let activeTab = useSearchParams()[0].get("tab");
 
     const getBlogs = ({ page, draft, deletedDocCount = 0 }) => {
         axios.post(import.meta.env.VITE_SERVER_ROUTE + "/user-written-blogs", { page, draft, query, deletedDocCount }, {
@@ -91,21 +95,25 @@ const ManageBlogs = () => {
                 <i className="fi fi-rr-search absolute right-[10%] md:pointer-events-none md:left-5 top-1/2 -translate-y-1/2 text-xl text-dark-grey"></i>
             </div>
 
-            <InPageNavigation routes={["Publish Blogs", "Drafts"]}>
+            <InPageNavigation routes={["Published Blogs", "Drafts"]} defaultActiveIndex={activeTab != 'draft' ? 0 : 1}>
 
                 {//Published Blogs
                     blogs == null ? <Loader /> :
                         blogs.results.length ?
                             <>
+
                                 {
                                     blogs.results.map((blog, i) => {
                                         return (
                                             <AnimationWrapper key={i} transition={{ delay: i * 0.04 }}>
-                                                <ManagePublishedBlogCard blog={blog} />
+                                                <ManagePublishedBlogCard blog={{ ...blog, index: i, setStateFunc: setBlogs }} />
                                             </AnimationWrapper>
                                         )
                                     })
                                 }
+
+                                <LoadMoreDataBtn state={blogs} fetchDataFun={getBlogs} additionalParam={{ draft: false, deletedDocCount: blogs.deletedDocCount }} />
+
                             </>
 
                             : <NoDataMessage message="No published blogs" />
@@ -119,11 +127,14 @@ const ManageBlogs = () => {
                                     drafts.results.map((blog, i) => {
                                         return (
                                             <AnimationWrapper key={i} transition={{ delay: i * 0.04 }}>
-                                                <ManageDraftBlogPost blog={blog} index={i + 1} />
+                                                <ManageDraftBlogPost blog={{ ...blog, index: i, setStateFunc: setDrafts }} />
                                             </AnimationWrapper>
                                         )
                                     })
                                 }
+
+                                <LoadMoreDataBtn state={drafts} fetchDataFun={getBlogs} additionalParam={{ draft: true, deletedDocCount: drafts.deletedDocCount }} />
+
                             </>
 
                             : <NoDataMessage message="No draft blogs" />

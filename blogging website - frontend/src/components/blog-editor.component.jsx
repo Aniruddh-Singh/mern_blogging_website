@@ -1,7 +1,9 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import logo from "../imgs/logo.png"
+import lightLogo from "../imgs/logo-light.png"
+import darkLogo from "../imgs/logo-dark.png"
 import AnimationWrapper from "../common/page-animation";
-import defaultBanner from "../imgs/blog banner.png"
+import lightBanner from "../imgs/blog banner light.png"
+import darkBanner from "../imgs/blog banner dark.png"
 import { uploadImage } from "../common/aws";
 import { useContext, useEffect } from "react";
 import { Toaster, toast } from "react-hot-toast"
@@ -9,11 +11,13 @@ import { EditorContext } from "../pages/editor.pages";
 import EditorJS from "@editorjs/editorjs";
 import { Tools } from "./tools.component";
 import axios from "axios";
-import { UserContext } from "../App";
+import { ThemeContext, UserContext } from "../App";
 
 const BlogEditor = () => {
 
     let { blog, blog: { title, banner, content, tags, des } = { title: '', banner: '', content: [], tags: [], des: '', author: { personal_info: {} } }, setBlog, textEditor, setTextEditor, setEditorState } = useContext(EditorContext);
+
+    let { theme } = useContext(ThemeContext);
 
     // console.log(isReady, "aniruddh");
 
@@ -56,7 +60,7 @@ const BlogEditor = () => {
 
     const handleError = (e) => {
         const img = e.target;
-        img.src = defaultBanner;
+        img.src = theme == 'light' ? lightBanner : darkBanner;
     }
 
     const handleTitleKeyDown = (e) => {
@@ -131,7 +135,7 @@ const BlogEditor = () => {
                         toast.success("Saved👍");
 
                         setTimeout(() => {
-                            navigate("/");
+                            navigate("/dashboard/blogs?tab=draft");
                         }, 500)
                     })
                     .catch(({ response }) => {
@@ -150,7 +154,7 @@ const BlogEditor = () => {
         <>
             <nav className="navbar">
                 <Link to="/" className="flex-none w-10">
-                    <img src={logo} />
+                    <img src={theme == 'logo' ? darkLogo : lightLogo} />
                 </Link>
 
                 <p className="max-md:hidden text-black line-clamp-1 w-full">
@@ -193,7 +197,7 @@ const BlogEditor = () => {
                         <textarea
                             defaultValue={title}
                             placeholder="Blog Title"
-                            className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-70"
+                            className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-70 bg-white"
                             onKeyDown={handleTitleKeyDown}
                             onChange={handleTitleChange}
                         ></textarea>
