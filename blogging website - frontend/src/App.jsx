@@ -12,7 +12,7 @@ import BlogPage from "./pages/blog.page.jsx";
 import SideNav from "./components/sidenavbar.component.jsx";
 import ChangePassword from "./pages/change-password.page.jsx";
 import EditProfile from "./pages/edit-profile.page.jsx";
-import Notification from "../../server/Schema/Notification.js";
+import Notification from "./pages/notifications.page.jsx";
 import ManageBlogs from "./pages/manage-blogs.page.jsx";
 
 export const UserContext = createContext({});
