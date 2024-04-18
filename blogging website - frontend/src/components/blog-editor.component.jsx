@@ -15,22 +15,20 @@ import { ThemeContext, UserContext } from "../App";
 
 const BlogEditor = () => {
 
-    let { blog, blog: { title, banner, content, tags, des } = { title: '', banner: '', content: [], tags: [], des: '', author: { personal_info: {} } }, setBlog, textEditor, setTextEditor, setEditorState } = useContext(EditorContext);
+    let { blog, blog: { title, banner, content, tags, des } = { title: '', banner: '', content: [], tags: [], des: '', author: { personal_info: {} } }, setBlog, textEditor, textEditor: { isReady }, setTextEditor, setEditorState } = useContext(EditorContext);
 
     let { theme } = useContext(ThemeContext);
 
-    // console.log(isReady, "aniruddh");
-
-    let { userAuth: { accessToken } } = useContext(UserContext);
+    let { userAuth, userAuth: { accessToken } } = useContext(UserContext);
 
     let { blog_id } = useParams();
 
     let navigate = useNavigate();
 
     useEffect(() => {
-        if (!textEditor.isReady) {
+        if (!isReady) {
             setTextEditor(new EditorJS({
-                holderId: "textEditor",
+                holder: "textEditor",
                 data: Array.isArray(content) ? content[0] : content,
                 tools: Tools,
                 placeholder: "Let's write an awesome story."
@@ -87,7 +85,7 @@ const BlogEditor = () => {
             return toast.error("Write blog title to publish it");
         }
 
-        if (textEditor.isReady) {
+        if (isReady) {
             // comment: didn't get, what is going below(textEditor.save() --> ?).
             textEditor.save().then(data => {
                 if (data.blocks.length) {
@@ -109,14 +107,14 @@ const BlogEditor = () => {
         }
 
         if (!title.length) {
-            return toast.error("Write blog title before saving it as a draft.")
+            return toast.error("Write blog title before saving it as a draft.");
         }
 
         let loadingToast = toast.loading("Saving Draft...");
 
         e.target.classList.add('disable');
 
-        if (textEditor.isReady) {
+        if (isReady) {
             // comment: didn't get, what is going below(textEditor.save() --> ?).
             textEditor.save().then(content => {
 

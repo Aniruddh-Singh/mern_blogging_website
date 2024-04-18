@@ -113,7 +113,7 @@ const NotificationCard = ({ data, index, notificationState }) => {
 
                         <p className='ml-14 font-gelasio text-xl my-2'>{reply.comment}</p>
 
-                        <button className='underline hover:text-black ml-14 mt-2' onClick={(e) => handleDelete(comment._id, "reply", e.target)}>Delete</button>
+                        <button className='underline hover:text-black ml-14 mt-2' onClick={(e) => handleDelete(reply._id, "reply", e.target)}>Delete</button>
 
                     </div> : ""
             }

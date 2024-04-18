@@ -21,7 +21,7 @@ const UserAuthForm = ({ type }) => {
                 setUserAuth(response.data);
             })
             .catch((err) => {
-                toast.error(err.response.data.Error);
+                toast.error(err.response.data.error);
             })
     }
 
@@ -64,10 +64,18 @@ const UserAuthForm = ({ type }) => {
 
     const handleGoogleAuth = (e) => {
         e.preventDefault();
-
         authWithGoogle().then(user => {
-            console.log(user);
+
+            let serverRoute = import.meta.env.VITE_SERVER_ROUTE + "/google-auth";
+
+            let formData = {
+                accessToken: user.accessToken
+            }
+
+            userAuthThroughServer(serverRoute, formData);
+
         }).catch((err) => {
+            toast.error('trouble login through google');
             console.log(err)
         })
     }

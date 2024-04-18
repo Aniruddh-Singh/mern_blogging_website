@@ -3,8 +3,11 @@ import mongoose from "mongoose";
 import "dotenv/config"
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
-import jwt from "jsonwebtoken";
+import jwt, { decode } from "jsonwebtoken";
 import cors from "cors";
+import admin from 'firebase-admin';
+import serviceAccountKey from "./likho7571-firebase-adminsdk-yc6rw-19ef7e1df0.json" assert { type: "json" };
+import { getAuth } from 'firebase-admin/auth';
 import aws from "aws-sdk";
 
 // Schema Below
@@ -15,6 +18,10 @@ import Comment from "./Schema/Comment.js";
 
 const server = express();
 const PORT = 3000;
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccountKey)
+});
 
 server.use(express.json());
 server.use(cors());
@@ -52,12 +59,12 @@ const verifyJWT = (req, res, next) => {
     const token = authHeader && authHeader.split(" ")[1];
 
     if (token == null) {
-        return res.status(401).json({ error: "No access token" })
+        return res.status(401).json({ "error": "No access token" })
     }
 
     jwt.verify(token, process.env.SECRET_ACCESS_KEY, (err, user) => {
         if (err) {
-            return res.status(403).json({ error: "Access token in invalid" });
+            return res.status(403).json({ "error": "Access token is invalid" });
         }
 
         req.user = user.id;
@@ -88,7 +95,7 @@ const formatDataToSend = (user) => {
 server.get("/get-upload-url", (req, res) => {
     generateUploadURL().then(url => res.status(200).json({ uploadURL: url }))
         .catch(err => {
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -97,16 +104,16 @@ server.post("/signup", (req, res) => {
     const { fullname, email, password } = req.body;
 
     if (fullname.length < 3) {
-        return res.status(403).json({ "Error": "FullName should be at least 3 letter long." })
+        return res.status(403).json({ "error": "FullName should be at least 3 letter long." })
     }
     if (!email) {
-        return res.status(403).json({ "Error": "enter an email." })
+        return res.status(403).json({ "error": "enter an email." })
     }
     if (!emailRegex.test(email)) {
-        return res.status(403).json({ "Error": "email is not valid." })
+        return res.status(403).json({ "error": "email is not valid." })
     }
     if (!passwordRegex.test(password)) {
-        return res.status(403).json({ "Error": "password should be between 6 to 20 letters atleast 1 numeric, 1 lowerCase and 1 upperCase letter." })
+        return res.status(403).json({ "error": "password should be between 6 to 20 letters atleast 1 numeric, 1 lowerCase and 1 upperCase letter." })
     }
 
     bcrypt.hash(password, 10, async (err, hashed_password) => {
@@ -119,9 +126,9 @@ server.post("/signup", (req, res) => {
             return res.status(200).json(formatDataToSend(u))
         }).catch((err) => {
             if (err.code == 11000) {
-                return res.status(500).json({ "Error": "Email already exists." })
+                return res.status(500).json({ "error": "Email already exists." })
             }
-            return res.status(500).json({ "Error": err.message })
+            return res.status(500).json({ "error": err.message })
         })
     })
 
@@ -134,46 +141,103 @@ server.post("/signin", (req, res) => {
     User.findOne({ "personal_info.email": email })
         .then((user) => {
             if (!user) {
-                return res.status(403).json({ "Error": "Email not found." });
+                return res.status(403).json({ "error": "Email not found." });
             }
 
-            bcrypt.compare(password, user.personal_info.password, (err, result) => {
-                if (err) {
-                    return res.status(500).json({ "Error": err.message });
-                }
+            if (!user.google_auth) {
+                bcrypt.compare(password, user.personal_info.password, (err, result) => {
+                    if (err) {
+                        return res.status(500).json({ "error": err.message });
+                    }
 
-                if (!result) {
-                    return res.status(403).json({ "Error": "Incorrect Password" });
-                } else {
-                    return res.status(200).json(formatDataToSend(user));
-                }
-            })
+                    if (!result) {
+                        return res.status(403).json({ "error": "Incorrect Password" });
+                    } else {
+                        return res.status(200).json(formatDataToSend(user));
+                    }
+                })
+            } else {
+                return res.status(403).json({ "error": "Account was created using google. Try logging in with google." })
+            }
+
         })
         .catch((err) => {
-            return res.status(500).json({ "Error": err.message })
+            return res.status(500).json({ "error": err.message })
         })
+})
+
+server.post("/google-auth", async (req, res) => {
+
+    let { accessToken } = req.body;
+
+    getAuth()
+        .verifyIdToken(accessToken)
+        .then(async (decodedUser) => {
+
+            let { email, name, picture } = decodedUser;
+
+            picture = picture.replace('s96-c', 's384-c');
+
+            let user = await User.findOne({ "personal_info.email": email })
+                .select("personal_info.fullname personal_info.profile_img google_auth")
+                .then((u) => {
+                    return u || null;
+                })
+                .catch(err => {
+                    return res.status(500).json({ "error": err.message })
+                })
+
+            if (user) {
+                if (!user.google_auth) {
+                    return res.status(403).json({ "error": "This email was signed up without google. Please log in with password to access the account." })
+                }
+            }
+            else {
+                let username = await getUserName(email);
+
+                user = new User({
+                    personal_info: { fullname: name, email, profile_img: picture, username },
+                    google_auth: true
+                })
+
+                await user.save()
+                    .then((u) => {
+                        user = u;
+                    })
+                    .catch(err => {
+                        return res.status(500).json({ "error": err.message })
+                    })
+            }
+
+            return res.status(200).json(formatDataToSend(user));
+
+        })
+        .catch(err => {
+            return res.status(500).json({ "error": "Failed to authenticate you with google. Try with some other google account." })
+        })
+
 })
 
 server.post('/change-password', verifyJWT, (req, res) => {
     let { currentPassword, newPassword } = req.body;
 
     if (!passwordRegex.test(currentPassword) || !passwordRegex.test(newPassword)) {
-        return res.status(403).json({ error: "Password should be 6 to 20 characters long with a numeric, 1 lowercase and 1 uppercase letters" });
+        return res.status(403).json({ "error": "Password should be 6 to 20 characters long with a numeric, 1 lowercase and 1 uppercase letters" });
     }
 
     User.findOne({ _id: req.user })
         .then((user) => {
             if (user.google_auth) {
-                return res.status(405).json({ error: "You can't change account's password because you logged in through google" })
+                return res.status(405).json({ "error": "You can't change account's password because you logged in through google" })
             }
 
             bcrypt.compare(currentPassword, user.personal_info.password, (err, result) => {
                 if (err) {
-                    return res.status(500).json({ error: "Some error occured while changing the password, please try again later" })
+                    return res.status(500).json({ "error": "Some error occured while changing the password, please try again later" })
                 }
 
                 if (!result) {
-                    return res.status(403).json({ error: "Incorrect current password" })
+                    return res.status(403).json({ "error": "Incorrect current password" })
                 }
 
                 bcrypt.hash(newPassword, 10, (err, hashed_password) => {
@@ -182,14 +246,14 @@ server.post('/change-password', verifyJWT, (req, res) => {
                             return res.status(200).json({ status: 'password changed' })
                         })
                         .catch(err => {
-                            return res.status(500).json({ error: 'Some error occured while saving new password, please try again later' })
+                            return res.status(500).json({ "error": 'Some error occured while saving new password, please try again later' })
                         })
                 })
             })
         })
         .catch(err => {
             console.log(err)
-            res.status(500).json({ error: "User not found" })
+            res.status(500).json({ "error": "User not found" })
         })
 
 })
@@ -210,7 +274,7 @@ server.post("/latest-blogs", (req, res) => {
             return res.status(200).json({ blogs })
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -221,7 +285,7 @@ server.post("/all-latest-blogs-count", (req, res) => {
         })
         .catch(er => {
             console.log(err.message)
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -245,7 +309,7 @@ server.post("/search-blogs-count", (req, res) => {
         })
         .catch(err => {
             console.log(err);
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 
 })
@@ -253,14 +317,14 @@ server.post("/search-blogs-count", (req, res) => {
 server.post("/search-users", (req, res) => {
     let { query } = req.body;
 
-    User.find({ "personal_info.username": new RegExp(query, "i") })
+    User.find({ "personal_info.username": new RegExp(query, 'i') })
         .limit(50)
         .select(" personal_info.fullname personal_info.username personal_info.profile_img -_id ")
         .then(users => {
             return res.status(200).json({ users })
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -273,7 +337,7 @@ server.post("/get-profile", (req, res) => {
         })
         .catch(err => {
             console.log(err)
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -285,7 +349,7 @@ server.post("/update-profile-img", verifyJWT, (req, res) => {
             return res.status(200).json({ profile_img: url })
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 })
 
@@ -295,11 +359,11 @@ server.post("/update-profile", verifyJWT, (req, res) => {
     let bioLimit = 150;
 
     if (username.length < 3) {
-        return res.status(403).json({ error: "Username should be atleast 3 letter long." })
+        return res.status(403).json({ "error": "Username should be atleast 3 letter long." })
     }
 
     if (bio.length > bioLimit) {
-        return res.status(403).json({ error: `Bio should not exceed ${bioLimit} characters.` })
+        return res.status(403).json({ "error": `Bio should not exceed ${bioLimit} characters.` })
     }
 
     let socialLinksArr = Object.keys(social_links);
@@ -310,16 +374,16 @@ server.post("/update-profile", verifyJWT, (req, res) => {
             if (social_links[socialLinksArr[i]].length) {
                 let hostname = new URL(social_links[socialLinksArr[i]]).hostname;
 
-                if (!hostname.includes(`${socialLinkesArr[i]}.com`) && socialLinksArr[i] != 'website') {
-                    return res.status(403).json({ error: `${socialLinksArr[i]} link is invalid. You must enter a full link` })
+                if (!hostname.includes(`${socialLinksArr[i]}.com`) && socialLinksArr[i] != 'website') {
+                    return res.status(403).json({ "error": `${socialLinksArr[i]} link is invalid. You must enter a full link` })
                 }
             }
         }
     } catch (err) {
-        return res.status(500).json({ error: "You must provide full social links with https(s) included" })
+        return res.status(500).json({ "error": "You must provide full social links with https(s) included" })
     }
 
-    let UpdateObj = {
+    let updateObj = {
         "personal_info.username": username,
         "personal_info.bio": bio,
         social_links
@@ -333,9 +397,9 @@ server.post("/update-profile", verifyJWT, (req, res) => {
         })
         .catch(err => {
             if (err.code == 1100) {
-                return res.status(409).json({ error: "Username is already taken" });
+                return res.status(409).json({ "error": "Username is already taken" });
             }
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 
 })
@@ -350,7 +414,7 @@ server.get("/trending-blogs", (req, res) => {
             return res.status(200).json({ blogs })
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -379,7 +443,7 @@ server.post("/search-blogs", (req, res) => {
             return res.status(200).json({ blogs })
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -389,32 +453,32 @@ server.post("/create-blog", verifyJWT, (req, res) => {
     let { title, banner, content, tags, des, draft, id } = req.body;
 
     if (!title.length) {
-        return res.status(403).json({ error: "You must provide a title." });
+        return res.status(403).json({ "error": "You must provide a title." });
     }
 
     if (!draft) {
 
 
         if (!des.length || des.length > 200) {
-            return res.status(403).json({ error: "You must provide blog description under 200 characters." })
+            return res.status(403).json({ "error": "You must provide blog description under 200 characters." })
         }
 
         if (!banner.length) {
-            return res.status(403).json({ error: "You must provide blog banner to publish it." })
+            return res.status(403).json({ "error": "You must provide blog banner to publish it." })
         }
 
         if (!content.blocks.length) {
-            return res.status(403).json({ error: "There must be some blog content to publish it" })
+            return res.status(403).json({ "error": "There must be some blog content to publish it" })
         }
 
         if (!tags.length || tags.length > 10) {
-            return res.status(403).json({ error: "Provide tags in order to publish the bolg, Maximum 10" })
+            return res.status(403).json({ "error": "Provide tags in order to publish the bolg, Maximum 10" })
         }
     }
 
-    tags = tags.map(tag => tag.tolowercase());
+    tags = tags.map(tag => tag.toLowerCase());
 
-    let blog_id = id || title.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, "-").trim().nanoid();
+    let blog_id = id || title.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, "-").trim() + nanoid();
 
     if (id) {
 
@@ -423,7 +487,7 @@ server.post("/create-blog", verifyJWT, (req, res) => {
                 return res.status(200).json({ id: blog_id })
             })
             .catch(err => {
-                return res.status(500).json({ error: err.message })
+                return res.status(500).json({ "error": err.message })
             })
 
     } else {
@@ -439,11 +503,11 @@ server.post("/create-blog", verifyJWT, (req, res) => {
                     return res.status(200).json({ id: blog.blog_id })
                 })
                 .catch(err => {
-                    return res.status(500).json({ error: "Failed to update total posts number." })
+                    return res.status(500).json({ "error": "Failed to update total posts number." })
                 })
         })
             .catch(err => {
-                return res.status(500).json({ error: err.message })
+                return res.status(500).json({ "error": err.message })
             })
     }
 
@@ -461,17 +525,17 @@ server.post("/get-blog", (req, res) => {
 
             User.findOneAndUpdate({ "personal_info.username": blog.author.personal_info.username }, { $inc: { "account_info.total_reads": incrementVal } })
                 .catch(err => {
-                    return res.status(500).json({ error: err.message });
+                    return res.status(500).json({ "error": err.message });
                 })
 
             if (blog.draft && !draft) {
-                return res.status(500).json({ error: 'you can not access draft blogs' })
+                return res.status(500).json({ "error": 'you can not access draft blogs' })
             }
 
             return res.status(200).json({ blog });
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 
 
@@ -482,7 +546,7 @@ server.post("/like-blog", verifyJWT, (req, res) => {
 
     let { _id, isLikedByUser } = req.body;
 
-    let incrementVal = !likedByUser ? 1 : -1;
+    let incrementVal = !isLikedByUser ? 1 : -1;
 
     Blog.findOneAndUpdate({ _id }, { $inc: { "activity.total_likes": incrementVal } })
         .then(blog => {
@@ -505,7 +569,7 @@ server.post("/like-blog", verifyJWT, (req, res) => {
                         return res.status(200).json({ likedByUser: false });
                     })
                     .catch(err => {
-                        return res.status(500).json({ error: err.message });
+                        return res.status(500).json({ "error": err.message });
                     })
 
             }
@@ -523,7 +587,7 @@ server.post("/isliked-by-user", verifyJWT, (req, res) => {
             return res.status(200).json({ result })
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -534,7 +598,7 @@ server.post("/add-comment", verifyJWT, (req, res) => {
     let { _id, comment, replying_to, blog_author, notification_id } = req.body;
 
     if (!comment.length) {
-        return res.status(403).json({ error: "Write something to leave a comment" })
+        return res.status(403).json({ "error": "Write something to leave a comment" })
     }
 
     // Creating a comment doc
@@ -604,7 +668,7 @@ server.post("/get-blog-comments", (req, res) => {
         })
         .catch(err => {
             console.log(err)
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
@@ -632,7 +696,7 @@ server.post("/get-replies", (req, res) => {
             return res.status(200).json({ replies: doc.children });
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 })
 
@@ -681,7 +745,7 @@ server.post("/delete-comment", verifyJWT, (req, res) => {
 
                 return res.status(200).json({ status: 'done' });
             } else {
-                return res.status(403).json({ error: "You can not delete this comment" });
+                return res.status(403).json({ "error": "You can not delete this comment" });
             }
         })
 })
@@ -699,7 +763,7 @@ server.get("/new-notification", verifyJWT, (req, res) => {
         })
         .catch(err => {
             console.log(err.message);
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 })
 
@@ -745,7 +809,7 @@ server.post("/notifications", verifyJWT, (req, res) => {
         })
         .catch(err => {
             console.log(err.message);
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 })
 
@@ -765,7 +829,7 @@ server.post("/all-notifications-count", verifyJWT, (req, res) => {
             return res.status(200).json({ totalDocs: count });
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 })
 
@@ -790,11 +854,11 @@ server.post("/user-written-blogs", verifyJWT, (req, res) => {
             return res.status(200).json({ blogs })
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message })
+            return res.status(500).json({ "error": err.message })
         })
 })
 
-server.post("user-written-blogs-count", verifyJWT, (req, res) => {
+server.post("/user-written-blogs-count", verifyJWT, (req, res) => {
     let user_id = req.user;
 
     let { draft, query } = req.body;
@@ -805,7 +869,7 @@ server.post("user-written-blogs-count", verifyJWT, (req, res) => {
         })
         .catch(err => {
             console.log(err.message);
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 })
 
@@ -827,7 +891,7 @@ server.post("/delete-blog", verifyJWT, (req, res) => {
                     console.log('comments deleted');
                 })
 
-            User.findOneAndUpdate({ _id: user_id }, { $pull: { blog: blog._id }, $inc: { "account_info.total_posts": -1 } })
+            User.findOneAndUpdate({ _id: user_id }, { $pull: { blog: blog._id }, $inc: { "account_info.total_posts": blog.draft ? 0 : -1 } })
                 .then(user => {
                     console.log('blog deleted');
                 })
@@ -836,7 +900,7 @@ server.post("/delete-blog", verifyJWT, (req, res) => {
 
         })
         .catch(err => {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ "error": err.message });
         })
 
 })

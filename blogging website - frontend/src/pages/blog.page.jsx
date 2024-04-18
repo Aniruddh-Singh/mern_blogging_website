@@ -3,12 +3,12 @@ import { useScroll } from "framer-motion";
 import { createContext, useEffect, useState } from "react";
 import AnimationWrapper from "../common/page-animation";
 import Loader from "../components/loader.component";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { getDay } from "../common/date";
 import BlogInteraction from "../components/blog-interaction.component";
 import BlogPostCard from "../components/blog-post.component";
 import BlogContent from "../components/blog-content.component";
-import { fetchComments } from "../components/comments.component";
+import CommentsContainer, { fetchComments } from "../components/comments.component";
 
 export const blogStructure = {
     title: '',

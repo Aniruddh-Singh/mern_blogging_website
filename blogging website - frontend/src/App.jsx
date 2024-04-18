@@ -32,7 +32,7 @@ const App = () => {
             let userSession = lookInSession("user");
             let themeInSession = lookInSession("theme");
 
-            userSession ? await setUserAuth({ accessToken: JSON.parse(userSession) }) : setUserAuth({ accessToken: null });
+            userSession ? await setUserAuth(JSON.parse(userSession)) : setUserAuth({ accessToken: null });
 
             if (themeInSession) {
                 setTheme(() => {
@@ -42,8 +42,6 @@ const App = () => {
             } else {
                 document.body.setAttribute('data-theme', theme);
             }
-
-            console.log(userAuth.accessToken);
 
         })();
     }, [])
@@ -56,8 +54,11 @@ const App = () => {
                     {/* There is some problem in context api which I am not getting yet, that is why I am writing different component separately instead of main one. */}
 
                     {/* <Route path="/editor" element={<Editor />} /> */}
-                    {userAuth ? < Route path="/editor" element={<Editor />} /> : ""}
-                    {userAuth ? < Route path="/editor/:blog_id" element={<Editor />} /> : ""}
+                    {userAuth ? <Route path="/editor" element={<Editor />} /> : ""}
+                    {userAuth ? <Route path="/editor/:blog_id" element={<Editor />} /> : ""}
+
+                    {/* <Route path="/editor" element={<Editor />} />
+                    <Route path="/editor/:blog_id" element={<Editor />} /> */}
                     <Route path="/" element={<Navbar />} >
                         <Route index element={<HomePage />} />
                         <Route path="dashboard" element={<SideNav />}>

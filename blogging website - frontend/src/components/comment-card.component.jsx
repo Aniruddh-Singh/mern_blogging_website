@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { getDay } from "../common/date";
 import { UserContext } from "../App";
 import toast from "react-hot-toast";
@@ -147,16 +147,16 @@ const CommentCard = ({ index, leftVal, commentData }) => {
                 <div className="flex gap-5 items-center mt-5">
                     {
                         commentData.isReplyLoaded ?
-                            <butotn
+                            <button
                                 onClick={hideReplies}
                                 className="text-dark-grey p-2 px-3 hover:bg-grey/30 rounded-md flex items-center gap-2">
                                 <i className="fi fi-rs-comment-dots"></i>Hide Reply
-                            </butotn> :
-                            <butotn
+                            </button> :
+                            <button
                                 onClick={loadReplies}
                                 className="text-dark-grey p-2 px-3 hover:bg-grey/30 rounded-md flex items-center gap-2">
                                 <i className="fi fi-rs-comment-dots"></i>{children.length} Reply
-                            </butotn>
+                            </button>
                     }
 
                     <button className="underline" onClick={handleReplyClick}>Reply</button>

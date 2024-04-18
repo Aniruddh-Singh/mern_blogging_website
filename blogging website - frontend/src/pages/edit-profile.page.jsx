@@ -68,6 +68,7 @@ const EditProfile = () => {
                             .catch(({ response }) => {
                                 toast.dismiss(loadingToast);
                                 e.target.removeAttribute("disabled");
+                                console.log(response);
                                 toast.error(response.data.error);
                             })
                     }
@@ -110,11 +111,11 @@ const EditProfile = () => {
                 if (userAuth.username != data.username) {
                     let newUserAuth = { ...userAuth, username: data.username };
 
-                    storeInSession("user", JSON.stringify(newUserAuths));
+                    storeInSession("user", JSON.stringify(newUserAuth));
                     setUserAuth(newUserAuth);
                 }
-
-                toast.dismiss(loading);
+                -
+                    toast.dismiss(loading);
                 e.target.removeAttribute("disabled");
                 toast.success("Profile Updated")
             })

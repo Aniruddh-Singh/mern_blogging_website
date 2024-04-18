@@ -95,7 +95,7 @@ const Navbar = () => {
                     </button>
 
                     {
-                        userAuth?.accessToken ?
+                        accessToken ?
                             <>
                                 <Link to={"/dashboard/notifications"}>
                                     <button className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10">
@@ -108,7 +108,7 @@ const Navbar = () => {
                                 </Link>
                                 <div className="relative" onClick={toggleUserNavPanel} onBlur={handleBlur}>
                                     <button className="w-12 h-12 mt-1">
-                                        <img src={userAuth?.profile_img} className="w-full h-full object-cover rounded-full" />
+                                        <img src={profile_img} className="w-full h-full object-cover rounded-full" />
                                     </button>
                                     {
                                         userNavPanel ? <UserNavigationPanel /> : ""

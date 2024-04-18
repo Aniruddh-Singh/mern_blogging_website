@@ -24,6 +24,8 @@ export const fetchComments = async ({ skip = 0, blog_id, setParentCommentCountFu
                 res = { results: [...comment_array, ...data] }
             }
         })
+
+    return res;
 }
 
 const CommentsContainer = () => {

@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react'
 import { Link } from 'react-router-dom';
 import { getDay } from '../common/date';
 import { UserContext } from '../App';
+import axios from 'axios';
 
 const BlogStats = ({ stats }) => {
 
@@ -41,11 +42,11 @@ export const ManagePublishedBlogCard = ({ blog }) => {
                     </div>
 
                     <div className='flex gap-6 mt-3'>
-                        <link to={`/editor/${blog_id}`} className='pr-4 py-2 underline'>Edit</link>
+                        <Link to={`/editor/${blog_id}`} className='pr-4 py-2 underline'>Edit</Link>
 
                         <button className='lg:hidden pr-4 py-2 underline' onClick={() => setShowStat(preVal => !preVal)}>Stats</button>
 
-                        <button className='pr-4 py-2 underline text-red' onClick={(e) => deleteBlog(blog, accessToken, e.target)}>Delete</button><button className='pr-4 py-2 underline text-red'>Delete</button>
+                        <button className='pr-4 py-2 underline text-red' onClick={(e) => deleteBlog(blog, accessToken, e.target)}>Delete</button>
                     </div>
                 </div>
 

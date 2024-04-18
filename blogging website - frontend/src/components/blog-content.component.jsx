@@ -28,7 +28,7 @@ const List = ({ style, items }) => {
         <ol className={`pl-5 ${style == "ordered" ? " list-decimal" : " list-disc"}`}>
             {
                 items.map((listItem, i) => {
-                    return <li key={i} className="my-4" dangerouslySetInnerHTML={{ __html: listItem }}></li>
+                    return <li key={i} className="my-4" ></li>
                 })
             }
         </ol >
@@ -40,16 +40,16 @@ const BlogContent = ({ block }) => {
     let { type, data } = block;
 
     if (type == "paragraph") {
-        return <p dangerouslySetInnerHTML={__html = data.text}>
+        return <p >
             {data.text}
         </p>
     }
 
     if (type == "header") {
         if (data.level == 3) {
-            return <h3 className="text-3xl font-bold" dangerouslySetInnerHTML={{ __html: data.text }}></h3>
+            return <h3 className="text-3xl font-bold" ></h3>
         }
-        return <h2 className="text-4xl font-bold" dangerouslySetInnerHTML={{ __html: data.text }}></h2>
+        return <h2 className="text-4xl font-bold" ></h2>
     }
 
     if (type == "image") {
