@@ -11,13 +11,14 @@ import { EditorContext } from "../pages/editor.pages";
 import EditorJS from "@editorjs/editorjs";
 import { Tools } from "./tools.component";
 import axios from "axios";
-import { ThemeContext, UserContext } from "../App";
+import { UserContext } from "../App";
+// import { ThemeContext, UserContext } from "../App";
 
 const BlogEditor = () => {
 
     let { blog, blog: { title, banner, content, tags, des } = { title: '', banner: '', content: [], tags: [], des: '', author: { personal_info: {} } }, setBlog, textEditor, textEditor: { isReady }, setTextEditor, setEditorState } = useContext(EditorContext);
 
-    let { theme } = useContext(ThemeContext);
+    // let { theme } = useContext(ThemeContext);
 
     let { userAuth, userAuth: { accessToken } } = useContext(UserContext);
 
@@ -58,7 +59,8 @@ const BlogEditor = () => {
 
     const handleError = (e) => {
         const img = e.target;
-        img.src = theme == 'light' ? lightBanner : darkBanner;
+        img.src = lightBanner;
+        // img.src = theme == 'light' ? lightBanner : darkBanner;
     }
 
     const handleTitleKeyDown = (e) => {
@@ -152,7 +154,11 @@ const BlogEditor = () => {
         <>
             <nav className="navbar">
                 <Link to="/" className="flex-none w-10">
-                    <img src={theme == 'logo' ? darkLogo : lightLogo} />
+                    <img
+                        src={darkLogo}
+                    // src={theme == 'logo' ? darkLogo : lightLogo}
+
+                    />
                 </Link>
 
                 <p className="max-md:hidden text-black line-clamp-1 w-full">

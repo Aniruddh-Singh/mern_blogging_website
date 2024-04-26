@@ -1,14 +1,17 @@
 import express from "express";
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
+import { connectDB } from "./config/db.js";
 import "dotenv/config"
 import bcrypt from "bcrypt";
 import { nanoid } from "nanoid";
-import jwt, { decode } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+import { verifyJWT } from "./middlewares/verifyJWT.js";
 import cors from "cors";
 import admin from 'firebase-admin';
-import serviceAccountKey from "./likho7571-firebase-adminsdk-yc6rw-19ef7e1df0.json" assert { type: "json" };
+import serviceAccountKey from "../likho7571-firebase-adminsdk-yc6rw-19ef7e1df0.json" assert { type: "json" };
 import { getAuth } from 'firebase-admin/auth';
-import aws from "aws-sdk";
+// import aws from "aws-sdk";
+import { S3 } from "./config/awsimg.js";
 
 // Schema Below
 import User from "./Schema/User.js";
@@ -29,18 +32,18 @@ server.use(cors());
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
 let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
 
-
-mongoose.connect(process.env.MONGODB_URL, {
-    autoIndex: true
-});
+// Configuring Database
+connectDB();
+// mongoose.connect(process.env.MONGODB_URL, {
+//     autoIndex: true
+// });
 
 // Setting up aws S3 bucket.
-const S3 = new aws.S3({
-    region: "ap-south-1",
-    accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-
-});
+// const S3 = new aws.S3({
+//     region: "ap-south-1",
+//     accessKeyId: process.env.AWS_ACCESS_KEY,
+//     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// });
 
 const generateUploadURL = async () => {
     const date = new Date();
@@ -54,24 +57,24 @@ const generateUploadURL = async () => {
     })
 }
 
-const verifyJWT = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(" ")[1];
+// const verifyJWT = (req, res, next) => {
+//     const authHeader = req.headers['authorization'];
+//     const token = authHeader && authHeader.split(" ")[1];
 
-    if (token == null) {
-        return res.status(401).json({ "error": "No access token" })
-    }
+//     if (token == null) {
+//         return res.status(401).json({ "error": "No access token" })
+//     }
 
-    jwt.verify(token, process.env.SECRET_ACCESS_KEY, (err, user) => {
-        if (err) {
-            return res.status(403).json({ "error": "Access token is invalid" });
-        }
+//     jwt.verify(token, process.env.SECRET_ACCESS_KEY, (err, user) => {
+//         if (err) {
+//             return res.status(403).json({ "error": "Access token is invalid" });
+//         }
 
-        req.user = user.id;
-        next();
-    })
+//         req.user = user.id;
+//         next();
+//     })
 
-}
+// }
 
 const getUserName = async (email) => {
     let username = email.split("@")[0];
@@ -179,7 +182,7 @@ server.post("/google-auth", async (req, res) => {
             picture = picture.replace('s96-c', 's384-c');
 
             let user = await User.findOne({ "personal_info.email": email })
-                .select("personal_info.fullname personal_info.profile_img google_auth")
+                .select("personal_info.fullname personal_info.username personal_info.profile_img google_auth")
                 .then((u) => {
                     return u || null;
                 })
@@ -258,76 +261,6 @@ server.post('/change-password', verifyJWT, (req, res) => {
 
 })
 
-server.post("/latest-blogs", (req, res) => {
-
-    let { page } = req.body;
-
-    let maxLimit = 5;
-
-    Blog.find({ draft: false })
-        .populate("author", "personal_info.profile_img personal_info.username personal_info.fullname -_id ")
-        .sort({ "publishedAt": -1 })
-        .select("blog_id title des banner activity tags publishedAt -_id")
-        .skip((page - 1) * maxLimit)
-        .limit(maxLimit)
-        .then(blogs => {
-            return res.status(200).json({ blogs })
-        })
-        .catch(err => {
-            return res.status(500).json({ "error": err.message })
-        })
-})
-
-server.post("/all-latest-blogs-count", (req, res) => {
-    Blog.countDocuments({ draft: false })
-        .then(count => {
-            return res.status(200).json({ totalDocs: count })
-        })
-        .catch(er => {
-            console.log(err.message)
-            return res.status(500).json({ "error": err.message })
-        })
-})
-
-server.post("/search-blogs-count", (req, res) => {
-
-    let { tag, query, author } = req.body;
-
-    let findQuery;
-
-    if (tag) {
-        findQuery = { tags: tag, draft: false };
-    } else if (query) {
-        findQuery = { draft: false, title: new RegExp(query, 'i') };
-    } else if (author) {
-        findQuery = { author, draft: false };
-    }
-
-    Blog.countDocuments(findQuery)
-        .then(count => {
-            return res.status(200).json({ totalDocs: count })
-        })
-        .catch(err => {
-            console.log(err);
-            return res.status(500).json({ "error": err.message })
-        })
-
-})
-
-server.post("/search-users", (req, res) => {
-    let { query } = req.body;
-
-    User.find({ "personal_info.username": new RegExp(query, 'i') })
-        .limit(50)
-        .select(" personal_info.fullname personal_info.username personal_info.profile_img -_id ")
-        .then(users => {
-            return res.status(200).json({ users })
-        })
-        .catch(err => {
-            return res.status(500).json({ "error": err.message })
-        })
-})
-
 server.post("/get-profile", (req, res) => {
     let { username } = req.body;
     User.findOne({ "personal_info.username": username })
@@ -402,6 +335,76 @@ server.post("/update-profile", verifyJWT, (req, res) => {
             return res.status(500).json({ "error": err.message });
         })
 
+})
+
+server.post("/latest-blogs", (req, res) => {
+
+    let { page } = req.body;
+
+    let maxLimit = 5;
+
+    Blog.find({ draft: false })
+        .populate("author", "personal_info.profile_img personal_info.username personal_info.fullname -_id ")
+        .sort({ "publishedAt": -1 })
+        .select("blog_id title des banner activity tags publishedAt -_id")
+        .skip((page - 1) * maxLimit)
+        .limit(maxLimit)
+        .then(blogs => {
+            return res.status(200).json({ blogs })
+        })
+        .catch(err => {
+            return res.status(500).json({ "error": err.message })
+        })
+})
+
+server.post("/all-latest-blogs-count", (req, res) => {
+    Blog.countDocuments({ draft: false })
+        .then(count => {
+            return res.status(200).json({ totalDocs: count })
+        })
+        .catch(er => {
+            console.log(err.message)
+            return res.status(500).json({ "error": err.message })
+        })
+})
+
+server.post("/search-blogs-count", (req, res) => {
+
+    let { tag, query, author } = req.body;
+
+    let findQuery;
+
+    if (tag) {
+        findQuery = { tags: tag, draft: false };
+    } else if (query) {
+        findQuery = { draft: false, title: new RegExp(query, 'i') };
+    } else if (author) {
+        findQuery = { author, draft: false };
+    }
+
+    Blog.countDocuments(findQuery)
+        .then(count => {
+            return res.status(200).json({ totalDocs: count })
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(500).json({ "error": err.message })
+        })
+
+})
+
+server.post("/search-users", (req, res) => {
+    let { query } = req.body;
+
+    User.find({ "personal_info.username": new RegExp(query, 'i') })
+        .limit(50)
+        .select(" personal_info.fullname personal_info.username personal_info.profile_img -_id ")
+        .then(users => {
+            return res.status(200).json({ users })
+        })
+        .catch(err => {
+            return res.status(500).json({ "error": err.message })
+        })
 })
 
 server.get("/trending-blogs", (req, res) => {
@@ -713,7 +716,7 @@ const deleteComments = (_id) => {
                     })
 
                 Notification.findOneAndDelete({ comment: _id })
-                    .then(notification => console.log('comment notification deleted'))
+                    .then(notification => console.log('comment notification deleted'));
 
                 Notification.findOneAndUpdate({ reply: _id }, { $unset: { reply: 1 } })
                     .then(notification => console.log('reply notification deleted'));

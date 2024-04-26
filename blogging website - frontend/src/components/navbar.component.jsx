@@ -3,7 +3,8 @@ import darkLogo from "../imgs/logo-dark.png"
 import lightLogo from "../imgs/logo-light.png"
 import { useContext, useEffect, useState } from "react";
 import "../index.css"
-import { ThemeContext, UserContext } from "../App";
+import { UserContext } from "../App";
+// import { ThemeContext, UserContext } from "../App";
 import UserNavigationPanel from "./user-navigation.component";
 import axios from "axios";
 import { storeInSession } from "../common/session";
@@ -13,7 +14,7 @@ const Navbar = () => {
     const [searchVisibility, setSearchVisibility] = useState(false);
     const [userNavPanel, setUserNavPanel] = useState(false);
 
-    let { theme, setTheme } = useContext(ThemeContext);
+    // let { theme, setTheme } = useContext(ThemeContext);
 
     let navigate = useNavigate();
 
@@ -36,16 +37,16 @@ const Navbar = () => {
         }, 100)
     }
 
-    const changeTheme = () => {
+    // const changeTheme = () => {
 
-        let newTheme = theme == 'light' ? 'dark' : 'light';
+    //     let newTheme = theme == 'light' ? 'dark' : 'light';
 
-        setTheme(newTheme);
+    //     setTheme(newTheme);
 
-        document.body.setAttribute("data-theme", newTheme);
+    //     document.body.setAttribute("data-theme", newTheme);
 
-        storeInSession("theme", newTheme);
-    }
+    //     storeInSession("theme", newTheme);
+    // }
 
     useEffect(() => {
         if (accessToken) {
@@ -67,7 +68,10 @@ const Navbar = () => {
         <>
             <nav className="navbar z-50">
                 <Link to="/" className="flex-none w-10">
-                    <img src={theme == 'light' ? darkLogo : lightLogo} className="w-full" />
+                    <img
+                        src={darkLogo}
+                        // src={theme == 'light' ? darkLogo : lightLogo} 
+                        className="w-full" />
                 </Link>
 
                 <div className={"absolute bg-white w-full left-0 top-full mt-0.5 border-b border-grey py-4 px-[5vw] md:border-0 md:block md:relative md:inset-0 md:p-0 md:w-auto md:show " + (searchVisibility ? "show" : "hide")}>
@@ -90,9 +94,9 @@ const Navbar = () => {
                         <p>Write</p>
                     </Link>
 
-                    <button className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10" onClick={changeTheme}>
+                    {/* <button className="w-12 h-12 rounded-full bg-grey relative hover:bg-black/10" onClick={changeTheme}>
                         <i className={"fi fi-rr-" + (theme == 'light' ? "moon-stars" : "sun") + " text-2xl block mt-1"}></i>
-                    </button>
+                    </button> */}
 
                     {
                         accessToken ?

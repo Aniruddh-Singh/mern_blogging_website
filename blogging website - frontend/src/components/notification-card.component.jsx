@@ -9,7 +9,7 @@ const NotificationCard = ({ data, index, notificationState }) => {
 
     let [isReplying, setReplying] = useState(false);
 
-    let { seen, type, createdAt, comment, replied_on_comment, user, user: { personal_info: { fullname, username, profile_img } }, blog: { _id, blog_id, title }, _id: notification_id } = data;
+    let { seen, type, reply, createdAt, comment, replied_on_comment, user, user: { personal_info: { fullname, username, profile_img } }, blog: { _id, blog_id, title }, _id: notification_id } = data;
 
     let { userAuth: { username: author_username, profile_img: author_profile_img, accessToken } } = useContext(UserContext);
 
@@ -68,7 +68,7 @@ const NotificationCard = ({ data, index, notificationState }) => {
                 </div>
             </div>
             {
-                type != 'link' ?
+                type != 'like' ?
                     <p className='ml-14 pl-5 font-gelasio text-xl my-5'>{comment.comment}</p>
                     : ""
             }

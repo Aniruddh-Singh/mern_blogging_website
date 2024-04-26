@@ -17,69 +17,69 @@ import ManageBlogs from "./pages/manage-blogs.page.jsx";
 
 export const UserContext = createContext({});
 
-export const ThemeContext = createContext({});
+// export const ThemeContext = createContext({});
 
-const darkThemePreference = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
+// const darkThemePreference = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
 
 const App = () => {
     const [userAuth, setUserAuth] = useState({ accessToken: null });
 
-    const [theme, setTheme] = useState(() => darkThemePreference() ? "dark" : "light");
+    // const [theme, setTheme] = useState(() => darkThemePreference() ? "dark" : "light");
 
     useEffect(() => {
         (async () => {
 
             let userSession = lookInSession("user");
-            let themeInSession = lookInSession("theme");
+            // let themeInSession = lookInSession("theme");
 
             userSession ? await setUserAuth(JSON.parse(userSession)) : setUserAuth({ accessToken: null });
 
-            if (themeInSession) {
-                setTheme(() => {
-                    document.body.setAttribute('data-theme', themeInSession);
-                    return themeInSession;
-                })
-            } else {
-                document.body.setAttribute('data-theme', theme);
-            }
+            // if (themeInSession) {
+            //     setTheme(() => {
+            //         document.body.setAttribute('data-theme', themeInSession);
+            //         return themeInSession;
+            //     })
+            // } else {
+            //     document.body.setAttribute('data-theme', theme);
+            // }
 
         })();
     }, [])
 
     return (
-        <ThemeContext.Provider value={{ theme, setTheme }}>
-            <UserContext.Provider value={{ userAuth, setUserAuth }}>
-                <Routes>
+        // <ThemeContext.Provider value={{ theme, setTheme }}>
+        <UserContext.Provider value={{ userAuth, setUserAuth }}>
+            <Routes>
 
-                    {/* There is some problem in context api which I am not getting yet, that is why I am writing different component separately instead of main one. */}
+                {/* There is some problem in context api which I am not getting yet, that is why I am writing different component separately instead of main one. */}
 
-                    {/* <Route path="/editor" element={<Editor />} /> */}
-                    {userAuth ? <Route path="/editor" element={<Editor />} /> : ""}
-                    {userAuth ? <Route path="/editor/:blog_id" element={<Editor />} /> : ""}
+                {/* <Route path="/editor" element={<Editor />} /> */}
+                {userAuth ? <Route path="/editor" element={<Editor />} /> : ""}
+                {userAuth ? <Route path="/editor/:blog_id" element={<Editor />} /> : ""}
 
-                    {/* <Route path="/editor" element={<Editor />} />
+                {/* <Route path="/editor" element={<Editor />} />
                     <Route path="/editor/:blog_id" element={<Editor />} /> */}
-                    <Route path="/" element={<Navbar />} >
-                        <Route index element={<HomePage />} />
-                        <Route path="dashboard" element={<SideNav />}>
-                            <Route path="blogs" element={<ManageBlogs />} />
-                            <Route path="notifications" element={<Notification />} />
-                        </Route>
-                        <Route path="settings" element={<SideNav />}>
-                            <Route path="edit-profile" element={<EditProfile />} />
-                            <Route path="change-password" element={<ChangePassword />} />
-                        </Route>
-
-                        <Route path="signin" element={<UserAuthForm type="sign-in" />} />
-                        <Route path="signup" element={<UserAuthForm type="sign-up" />} />
-                        <Route path="search/:query" element={<SearchPage />} />
-                        <Route path="user/:id" element={<ProfilePage />} />
-                        <Route path="blog/:blog_id" element={<BlogPage />} />
-                        <Route path="*" element={<PageNotFound />} />
+                <Route path="/" element={<Navbar />} >
+                    <Route index element={<HomePage />} />
+                    <Route path="dashboard" element={<SideNav />}>
+                        <Route path="blogs" element={<ManageBlogs />} />
+                        <Route path="notifications" element={<Notification />} />
                     </Route>
-                </Routes>
-            </UserContext.Provider>
-        </ThemeContext.Provider >
+                    <Route path="settings" element={<SideNav />}>
+                        <Route path="edit-profile" element={<EditProfile />} />
+                        <Route path="change-password" element={<ChangePassword />} />
+                    </Route>
+
+                    <Route path="signin" element={<UserAuthForm type="sign-in" />} />
+                    <Route path="signup" element={<UserAuthForm type="sign-up" />} />
+                    <Route path="search/:query" element={<SearchPage />} />
+                    <Route path="user/:id" element={<ProfilePage />} />
+                    <Route path="blog/:blog_id" element={<BlogPage />} />
+                    <Route path="*" element={<PageNotFound />} />
+                </Route>
+            </Routes>
+        </UserContext.Provider>
+        // </ThemeContext.Provider >
     )
 }
 
