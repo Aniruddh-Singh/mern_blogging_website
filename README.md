@@ -8,7 +8,8 @@
 ![Screenshot 2024-04-26 232225](https://github.com/Aniruddh-Singh/mern_blogging_website/assets/96120907/84599388-1ec0-4f33-b413-069742002757)
 
 ## Live Link
-[The Coffee Cat](https://thecoffeecat.netlify.app/)
+[Blog7571](https://blog7571.vercel.app)<br />
+(Wait a while for data to load.)
 
 ## Tech Stack
 React.js, Node.js, Tailwind css, AWS S3, Firebase, MongoDB
