@@ -123,5 +123,5 @@
 .cdx-settings-button[data-tune='withBorder'],
 .cdx-settings-button[data-tune='withBackground'],
 .cdx-settings-button[data-tune='stretched'] {
-  display: none;
+    display: none;
 }

@@ -116,7 +116,6 @@ const HomePage = () => {
                                                     <BlogPostCard
                                                         content={blog}
                                                         author={blog.author.personal_info}
-
                                                     />
                                                 </AnimationWrapper>)
                                             })
@@ -141,7 +140,6 @@ const HomePage = () => {
                                         : <NoDataMessage message={"No trending blogs"} />
                                 )
                         }
-
                     </InPageNavigation>
                 </div>
 

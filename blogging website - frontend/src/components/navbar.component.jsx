@@ -37,14 +37,10 @@ const Navbar = () => {
         }, 100)
     }
 
-    // const changeTheme = () => {
-
+    // const changeTheme = () => {   
     //     let newTheme = theme == 'light' ? 'dark' : 'light';
-
     //     setTheme(newTheme);
-
     //     document.body.setAttribute("data-theme", newTheme);
-
     //     storeInSession("theme", newTheme);
     // }
 
